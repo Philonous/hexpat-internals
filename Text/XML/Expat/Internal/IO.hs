@@ -14,6 +14,7 @@
 module Text.XML.Expat.Internal.IO (
   -- ** Parser Setup
   Parser, newParser,
+  ParseOptions(..),
 
   -- ** Parsing
   parse, parse',
@@ -47,13 +48,18 @@ module Text.XML.Expat.Internal.IO (
   setExternalEntityRefHandler,
   setSkippedEntityHandler,
   setUseForeignDTD,
+  setStartNamespaceDeclHandler,
+  setEndNamespaceDeclHandler,
 
   -- ** Lower-level interface
   parseExternalEntityReference,
   ExpatHandlers,
+  unsafeSetHandlers,
+  unsafeReleaseHandlers,
 
   -- ** Helpers
   encodingToString
+
   ) where
 
 import           Control.Concurrent
@@ -64,10 +70,10 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import           Data.Char
 import           Data.IORef
+import           Data.Text(Text)
 import           Foreign hiding (unsafePerformIO)
 import           Foreign.C
 import           System.IO.Unsafe (unsafePerformIO)
-
 
 -- |Opaque parser type.
 data Parser_struct
@@ -111,6 +117,16 @@ parserCreate a1 =
       xmlSetUserData pp pp
       return pp
 
+data ParseOptions = ParseOptions
+    { overrideEncoding :: Maybe Encoding
+          -- ^ The encoding parameter, if provided, overrides the document's
+          -- encoding declaration.
+    , entityDecoder  :: Maybe (Text -> Maybe Text)
+          -- ^ If provided, entity references (i.e. @&nbsp;@ and friends) will
+          -- be decoded into text using the supplied lookup function
+    }
+
+
 parserCreateNS :: Maybe Encoding -> Char -> IO (ParserPtr)
 parserCreateNS a1 sep=
   withOptEncoding a1 $ \a1' -> do
@@ -120,9 +136,15 @@ parserCreateNS a1 sep=
 
 
 -- | Create a 'Parser'.
-newParser :: Maybe Encoding -> IO Parser
-newParser enc = do
-  ptr          <- parserCreate enc
+
+newParser :: Maybe Encoding
+             -> Maybe Char -- ^ Character to delimit namespaces or nothing
+                           -- to ignore them
+             -> IO Parser
+newParser enc del = do
+  ptr          <- case del of
+                       Nothing -> parserCreate enc
+                       Just delim -> parserCreateNS enc delim
   fptr         <- newForeignPtr parserFree ptr
   nullXMLDeclH <- newIORef nullCXMLDeclarationHandler
   nullStartH   <- newIORef nullCStartElementHandler
