@@ -1,0 +1,100 @@
+Cabal-Version: >= 1.6
+Name: hexpat-internals
+Version: 0.0.1
+Synopsis: XML parser backend
+Description:
+  This package provides a general purpose Haskell XML library using Expat to
+  do its parsing (<http://expat.sourceforge.net/> - a fast stream-oriented XML
+  parser written in C).  It is extensible to any string type, with @String@,
+  @ByteString@ and @Text@ provided out of the box.
+  .
+  BOUND VS. UNBOUND THREADS: GHC (at least versions 6.12.X) will spawn threads
+  if you call a safe FFI callback from an unbound thread.  This can get out of
+  control in a busy application.  To avoid this, from version 0.19.1 we now delegate
+  processing to a single worker thread if the calling thread is not bound.
+  This essentially means that hexpat currently won't exploit multicores very well.
+  It also means that hexpat may be more efficient on threads spawned with forkOS
+  (to give you a bound thread) rather than forkIO.
+  This is s a fork of hexpat 0.19.10
+Category: XML
+License: BSD3
+License-File: LICENSE
+Author:
+  Stephen Blackheath [blackh] (the primary author),
+  Doug Beardsley,
+  Gregory Collins,
+  Evan Martin (who started the project),
+  Matthew Pocock [drdozer],
+  Kevin Jardine,
+  Jacob Stanley,
+  Simon Hengel
+  Philipp Balzarek
+Maintainer: p.balzarek@googlemail.com
+Copyright:
+  (c) 2009 Doug Beardsley <mightybyte@gmail.com>,
+  (c) 2009-2012 Stephen Blackheath <http://blacksapphire.com/antispam/>,
+  (c) 2009 Gregory Collins,
+  (c) 2008 Evan Martin <martine@danga.com>,
+  (c) 2009 Matthew Pocock <matthew.pocock@ncl.ac.uk>,
+  (c) 2007-2009 Galois Inc.,
+  (c) 2010 Kevin Jardine,
+  (c) 2012 Simon Hengel
+  (c) 2012 Philipp Balzarek
+Extra-Source-Files:
+  test/hexpat-tests.cabal,
+  test/test.xml,
+  test/suite/TestSuite.hs,
+  test/suite/Text/XML/Expat/Proc/Tests.hs,
+  test/suite/Text/XML/Expat/UnitTests.hs,
+  test/suite/Text/XML/Expat/Tests.hs,
+  test/suite/Text/XML/Expat/Cursor/Tests.hs,
+  test/suite/Text/XML/Expat/ParallelTest.hs,
+  test/suite/Text/XML/Expat/ParseFormat.hs,
+  test/thread-leak/build.sh,
+  test/thread-leak/callme.c,
+  test/thread-leak/cleak.c,
+  test/thread-leak/clean.sh,
+  test/thread-leak/thread-leak.hs,
+  test/hexpat-leak/instant-message.llsd,
+  test/hexpat-leak/Parse.hs,
+  test/hexpat-leak/run.sh,
+  test/hexpat-leak/build.sh
+  cbits/amigaconfig.h,
+  cbits/asciitab.h,
+  cbits/expat.h,
+  cbits/internal.h,
+  cbits/macconfig.h,
+  cbits/utf8tab.h,
+  cbits/xmlrole.h,
+  cbits/xmltok_impl.h,
+  cbits/ascii.h,
+  cbits/expat_external.h,
+  cbits/iasciitab.h,
+  cbits/latin1tab.h,
+  cbits/nametab.h,
+  cbits/winconfig.h,
+  cbits/xmltok.h
+Build-Type: Simple
+Stability: beta
+source-repository head
+    type:     darcs
+    location: https://github.com/Philonous/hexpat-internals
+
+Library
+  Build-Depends:
+    base >= 3 && < 5,
+    bytestring,
+    deepseq >= 1.1.0.0 && < 1.4.0.0,
+    extensible-exceptions == 0.1.*
+  Exposed-Modules:
+    Text.XML.Expat.Internal.IO
+  ghc-options: -Wall -fno-warn-name-shadowing
+  include-dirs: cbits
+  c-sources:
+    cbits/xmlparse.c,
+    cbits/xmlrole.c,
+    cbits/xmltok.c,
+    cbits/xmltok_impl.c,
+    cbits/xmltok_ns.c
+  cc-options: -DHAVE_MEMMOVE -DXML_NS -DXML_DTD
+
